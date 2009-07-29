@@ -2,7 +2,7 @@ begin
   require File.dirname(__FILE__) + '/../../../../config/environment'
 rescue LoadError
   require 'rubygems'
-  require_gem 'activerecord'
+  require 'activerecord'
 end
 
 require 'preference_fu'
