@@ -22,6 +22,7 @@ module PreferenceFu
       config = { :column => 'preferences' }
       
       idx = 0; self.preference_options = {}
+      options = options[0] if options[0].is_a?(Array)  #allows you to pass in an array of symbols
       options.each do |pref|
         self.preference_options[2**idx] = { :key => pref.to_sym, :default => false }
         idx += 1
