@@ -55,23 +55,70 @@ module PreferenceFu
       record
     end
 
+
+    # => preference - any preference symbol
+    # => preference_value - defaults to true
+    # =>  options - can be any of the normal ActiveRecord find options.  if options[:conditions] exists preferences logic
+    # will be and'ed on to it
     def find_by_preference(preference, preference_value = true, options = {})
-      idx, hsh = self.preference_options.find { |idx, hsh| hsh[:key] == preference.to_sym }
-      return nil if idx.nil?
-      cnd = "(#{self.table_name}.#{self.preferences_column} & #{idx} "
-      if preference_value == true 
-        cnd << " > 0)" 
-      else
-        cnd << " = 0)"
-      end
-      if options[:conditions]
-        options[:conditions] << " and #{cnd}"
-      else
-        options[:conditions] = cnd
-      end
-      find(:all, options)
+      find_by_preferences({preference => preference_value}, options)
     end
     
+    #preferences can be any of the following:
+    # => {:create_user => true, :delete_user => false}  - would find all records with those settings
+    #
+    # More complex... 
+    #     You can use syntax below to build more complex scenarios.  Note - you must use symbols and true/false
+    #     since the code is just doing string replacements.
+    # => "(:create_user = true or (:delete_user = false and :edit_user = true))" 
+    # options - can be any of the normal ActiveRecord find options.  if options[:conditions] exists preferences logic
+    # will be and'ed on to it
+    def find_by_preferences(preferences, options = {})
+      p = preferences
+      if p.is_a?(Hash)
+        cnd = []
+        p.each do |k,v|
+          cnd << build_condition(lookup(k), v)
+        end
+        return find(:all, add_to_options(options, cnd.join(" and ")) )
+      elsif p.is_a?(String)
+        p.downcase!
+        p.gsub!(/\s+/, " ")
+        self.preference_options.each do |idx, hsh|
+          p.gsub!(":#{hsh[:key]} = true", build_condition(idx,true))
+          p.gsub!(":#{hsh[:key]} = false", build_condition(idx,false))
+        end
+        return find(:all, add_to_options(options, p))
+      else
+        raise "Invalid input - first argument must be a string or a hash - see documentation or readme"
+      end
+    end
+
+    private
+      def lookup(preference)
+        idx, hsh = self.preference_options.find { |idx, hsh| hsh[:key] == preference.to_sym }
+        return idx
+      end
+      
+      def build_condition(idx, pval)
+        res = "(#{self.table_name}.#{self.preferences_column} & #{idx} "
+        if pval == true 
+          res << " > 0)" 
+        else
+          res << " = 0)"
+        end
+        return res
+      end
+      
+      def add_to_options(options, conditions)
+        if options[:conditions]
+          options[:conditions] << " and #{conditions}"
+        else
+          options[:conditions] = conditions
+        end
+        return options
+      end
+        
   end
   
   module InstanceMethods
