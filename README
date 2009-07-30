@@ -67,7 +67,12 @@ Enumerable...
 		puts "#{key} is set to #{value}"
 	end
 	
-
+Finding...
+	@users = User.find_by_preference(:delete_user)  #assumes true
+	
+	#more verbose - find all users who have delete_user = false, aren't named bob, order them by name and limit to 10 records (supports all AR options)
+	@users = User.find_by_preference(:delete_user, false, {:conditions => "name <> 'bob'", :order => "name asc", :limit => 10})
+	
 Warning
 =======
 
