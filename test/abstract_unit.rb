@@ -16,6 +16,10 @@ def setup_db
       t.string      :name
       t.integer     :preferences
     end
+    create_table :wombats do |t|
+      t.string      :name
+      t.integer     :preferences
+    end
   end
 end
 

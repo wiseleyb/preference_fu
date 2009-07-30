@@ -31,7 +31,10 @@ module PreferenceFu
       class_eval <<-EOV
 
       def preferences_column
-        '#{config[:column]}'
+          '#{config[:column]}'
+      end
+      def self.preferences_column
+          '#{config[:column]}'
       end
 
       EOV
@@ -51,6 +54,23 @@ module PreferenceFu
       record.prefs
       record
     end
+
+    def find_by_preference(preference, preference_value = true, options = {})
+      idx, hsh = self.preference_options.find { |idx, hsh| hsh[:key] == preference.to_sym }
+      return nil if idx.nil?
+      cnd = "(#{self.table_name}.#{self.preferences_column} & #{idx} "
+      if preference_value == true 
+        cnd << " > 0)" 
+      else
+        cnd << " = 0)"
+      end
+      if options[:conditions]
+        options[:conditions] << " and #{cnd}"
+      else
+        options[:conditions] = cnd
+      end
+      find(:all, options)
+    end
     
   end
   
@@ -69,7 +89,7 @@ module PreferenceFu
     def prefs=(hsh)
       prefs.store(hsh)
     end
-    
+        
   end
   
   

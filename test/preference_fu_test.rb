@@ -2,7 +2,6 @@ require 'test/unit'
 require File.join(File.dirname(__FILE__), 'abstract_unit')
 require File.join(File.dirname(__FILE__), 'person')
 
-
 class PreferenceFuTest < Test::Unit::TestCase
   
   def setup
