@@ -3,6 +3,7 @@ class Wombat < ActiveRecord::Base
   
   PREFS = [:send_email, :change_theme, :delete_wombat, :create_wombat]
   has_preferences PREFS
+  methodize_preferences PREFS
   
   PREFS.each do |p|
     set_default_preference p, true

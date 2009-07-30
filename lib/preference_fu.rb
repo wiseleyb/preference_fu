@@ -41,6 +41,24 @@ module PreferenceFu
             
     end
     
+    def methodize_preferences(*options)
+      #convert preferences into methods for easier use in forms and form helpers
+      options = options[0] if options[0].is_a?(Array)  #allows you to pass in an array of symbols
+      options.each do |k|
+        class_eval do
+          define_method k.to_sym do
+            self.prefs[k]
+          end
+          define_method "#{k}?".to_sym do
+            self.prefs[k]
+          end
+          define_method "#{k}=".to_sym do |value|
+            self.prefs[k] = value
+          end
+        end
+      end
+    end
+    
     def set_default_preference(key, default)
       raise ArgumentError.new("Default value must be boolean") unless [true, false].include?(default)
       idx = preference_options.find { |idx, hsh| hsh[:key] == key.to_sym }.first rescue nil
@@ -56,14 +74,6 @@ module PreferenceFu
     end
 
 
-    # => preference - any preference symbol
-    # => preference_value - defaults to true
-    # =>  options - can be any of the normal ActiveRecord find options.  if options[:conditions] exists preferences logic
-    # will be and'ed on to it
-    def find_by_preference(preference, preference_value = true, options = {})
-      find_by_preferences({preference => preference_value}, options)
-    end
-    
     #preferences can be any of the following:
     # => {:create_user => true, :delete_user => false}  - would find all records with those settings
     #

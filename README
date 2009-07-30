@@ -67,17 +67,31 @@ Enumerable...
 		puts "#{key} is set to #{value}"
 	end
 	
-Finding... find_by_preference(preference, T/F = T, active-record-options = {})
 
-	@users = User.find_by_preference(:delete_user)  #assumes true
-	
-	More verbose - find all users who have delete_user = false, aren't named bob, order them by name and limit to 10 records (supports all AR options)
-	@users = User.find_by_preference(:delete_user, false, {:conditions => "name <> 'bob'", :order => "name asc", :limit => 10})
+Methodizing...
+
+	By adding a "methodize_preferences" call 
+
+	class User < ActiveRecord::Base
+
+		has_preferences :send_email, :change_theme, :delete_user, :create_user
+		methodize_preferences :send_email, :change_theme, :delete_user, :create_user
+		set_default_preference :send_email, true
+
+	end
+
+	you can do things like:
+	@user.send_email == true
+	@user.send_email?
+	@user.send_email = false
 	
 
 Finding... find_by_preferences(hash-or-string, active-record-options = {})
-	preferences can be any of the following:
-	 => {:create_user => true, :delete_user => false}  - would find all records with those settings
+		@users = User.find_by_preferences(:delete_user => true)  #find users with delete_user = true
+	  @users = User.find_by_preferences({:create_user => true, :delete_user => false})  - would find all records with those settings
+
+		More verbose - find all users who have delete_user = false, aren't named bob, order them by name and limit to 10 records (supports all AR options)
+		@users = User.find_by_preferences({:delete_user => false}, {:conditions => "name <> 'bob'", :order => "name asc", :limit => 10})
 
 	 More complex... 
 	     You can use syntax below to build more complex scenarios.  Note - you must use symbols and true/false

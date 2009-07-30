@@ -3,7 +3,7 @@ require File.join(File.dirname(__FILE__), 'abstract_unit')
 require File.join(File.dirname(__FILE__), 'wombat')
 
 
-class PreferenceFuWombatTest < Test::Unit::TestCase
+class FindByPreferencesTest < Test::Unit::TestCase
   
   def setup
     setup_db
@@ -34,26 +34,11 @@ class PreferenceFuWombatTest < Test::Unit::TestCase
     end
   end
   
-  def test_find_by_preference
-    res = Wombat.find_by_preference(:send_email, false)
+  def test_find_by_preferences_by_hash
+    res = Wombat.find_by_preferences(:send_email => false)
     assert res.size == 1
     assert res.first == @w1
-    
-    res = Wombat.find_by_preference(:send_email, true)
-    assert res.first == @w2
-    assert res.size == 1
-    
-    assert Wombat.find_by_preference(:delete_wombat, true).size == 2
-    assert Wombat.find_by_preference(:delete_wombat, false).size == 0
-    
-    #test options - this could be better - but, for now - just some simple tests
-    assert Wombat.find_by_preference(:delete_wombat, true, {:order => "name desc"}).first == @w2
-    assert Wombat.find_by_preference(:delete_wombat, true, {:order => "name asc"}).first == @w1
-    assert Wombat.find_by_preference(:delete_wombat, true, {:conditions => "name <> '@w1'"}).first == @w2
-  end
-  
-  
-  def test_find_by_preferences_by_hash
+
     res = Wombat.find_by_preferences({:send_email => false})
     assert res.size == 1
     assert res.first == @w1
