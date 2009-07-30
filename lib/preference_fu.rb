@@ -43,7 +43,7 @@ module PreferenceFu
     
     def methodize_preferences(*options)
       #convert preferences into methods for easier use in forms and form helpers
-      options = options[0] if options[0].is_a?(Array)  #allows you to pass in an array of symbols
+      options = options.clone[0] if options[0].is_a?(Array)  #allows you to pass in an array of symbols
       options.each do |k|
         class_eval do
           define_method k.to_sym do
@@ -84,13 +84,16 @@ module PreferenceFu
     # options - can be any of the normal ActiveRecord find options.  if options[:conditions] exists preferences logic
     # will be and'ed on to it
     def find_by_preferences(preferences, options = {})
-      p = preferences
+      #I tried dup and clone for these - wasn't working - options were still getting changed... thus the Marshal stuff
+      p = Marshal.load(Marshal.dump(preferences))
+      opt = Marshal.load(Marshal.dump(options))
       if p.is_a?(Hash)
         cnd = []
         p.each do |k,v|
           cnd << build_condition(lookup(k), v)
         end
-        return find(:all, add_to_options(options, cnd.join(" and ")) )
+        opt = add_to_options(opt, cnd.join(" and "))
+        return find(:all, opt)
       elsif p.is_a?(String)
         p.downcase!
         p.gsub!(/\s+/, " ")
@@ -98,7 +101,8 @@ module PreferenceFu
           p.gsub!(":#{hsh[:key]} = true", build_condition(idx,true))
           p.gsub!(":#{hsh[:key]} = false", build_condition(idx,false))
         end
-        return find(:all, add_to_options(options, p))
+        opt = add_to_options(opt, p)
+        return find(:all, opt)
       else
         raise "Invalid input - first argument must be a string or a hash - see documentation or readme"
       end
@@ -120,13 +124,13 @@ module PreferenceFu
         return res
       end
       
-      def add_to_options(options, conditions)
-        if options[:conditions]
-          options[:conditions] << " and #{conditions}"
+      def add_to_options(opt, cnd)
+        if opt[:conditions]
+          opt[:conditions] << " and #{cnd}"
         else
-          options[:conditions] = conditions
+          opt[:conditions] = cnd
         end
-        return options
+        return opt
       end
         
   end
