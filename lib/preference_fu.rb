@@ -85,15 +85,29 @@ module PreferenceFu
     # will be and'ed on to it
     def find_by_preferences(preferences, options = {})
       #I tried dup and clone for these - wasn't working - options were still getting changed... thus the Marshal stuff
-      p = Marshal.load(Marshal.dump(preferences))
       opt = Marshal.load(Marshal.dump(options))
+      opt = add_to_options(opt, preferences_to_conditions(preferences))
+      return find(:all, opt)
+    end
+
+    #Converts preferences into ActiveRecord conditions
+    #
+    #preferences can be any of the following:
+    # => {:create_user => true, :delete_user => false}  - would find all records with those settings
+    #
+    # More complex... 
+    #     You can use syntax below to build more complex scenarios.  Note - you must use symbols and true/false
+    #     since the code is just doing string replacements.
+    # => "(:create_user = true or (:delete_user = false and :edit_user = true))" 
+    def preferences_to_conditions(preferences)
+      #I tried dup and clone for these - wasn't working - options were still getting changed... thus the Marshal stuff
+      p = Marshal.load(Marshal.dump(preferences))
       if p.is_a?(Hash)
         cnd = []
         p.each do |k,v|
           cnd << build_condition(lookup(k), v)
         end
-        opt = add_to_options(opt, cnd.join(" and "))
-        return find(:all, opt)
+        return cnd.join(" and ")
       elsif p.is_a?(String)
         p.downcase!
         p.gsub!(/\s+/, " ")
@@ -101,13 +115,60 @@ module PreferenceFu
           p.gsub!(":#{hsh[:key]} = true", build_condition(idx,true))
           p.gsub!(":#{hsh[:key]} = false", build_condition(idx,false))
         end
-        opt = add_to_options(opt, p)
-        return find(:all, opt)
+        return p
       else
         raise "Invalid input - first argument must be a string or a hash - see documentation or readme"
       end
     end
+    
+    #Converts a hash of preferences into something you could use in an update statement
+    # => preferences to update: example {:create_user => true, :delete_user => false}  
+    #     - would return "^ 4 | 2" - depending on the key values
+    def preferences_to_update(preferences)
+      xors = ""
+      ors = ""
+      p = Marshal.load(Marshal.dump(preferences))
+      if p.is_a?(Hash)
+        p.each do |k,v|
+          if v == true
+            ors << "| #{lookup(k)} "
+          else
+            xors << "&~ #{lookup(k)} "
+          end
+        end
+        puts %(#{xors} #{ors})
+        return %("#{self.preferences_column}" #{xors} #{ors})
+      else
+        raise "Invalid input - preferences must be a hash"
+      end
+    end
+    
+    # => preferences to update: example {:create_user => true, :delete_user => false}  - would set all records to those values
+    # => conditions: same as update_all, see Rails doc, use preferences_to_conditions if you want to conditional set by preference
+    # => options: same as update_all, see Rails doc   
+    def update_preferences(id, preferences, attributes = {})
+      p = Marshal.load(Marshal.dump(preferences))
+      attributes[self.preferences_column.to_sym] = preferences_to_update(p)
+      update(id,attributes)
+    end  
 
+    # => preferences to update: example {:create_user => true, :delete_user => false}  - would set all records to those values
+    # => updates: will be added on to the preference conversion
+    # => conditions: same as update_all, see Rails doc, use preferences_to_conditions if you want to conditional set by preference
+    # => options: same as update_all, see Rails doc   
+    def update_all_preferences(preferences, updates = nil, conditions = nil, options = {})
+      #I tried dup and clone for these - wasn't working - options were still getting changed... thus the Marshal stuff
+      p = Marshal.load(Marshal.dump(preferences))
+      upt = %("#{self.preferences_column}" = #{preferences_to_update(p)})
+      upt = "#{upt}, #{updates}" unless updates.nil?
+      self.update_all(upt, conditions, options)
+    end
+
+    
+    def lookup_preference(preference)
+      lookup(preference)
+    end
+    
     private
       def lookup(preference)
         idx, hsh = self.preference_options.find { |idx, hsh| hsh[:key] == preference.to_sym }
