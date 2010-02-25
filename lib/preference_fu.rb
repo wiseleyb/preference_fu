@@ -86,10 +86,11 @@ module PreferenceFu
     def find_by_preferences(preferences, options = {})
       #I tried dup and clone for these - wasn't working - options were still getting changed... thus the Marshal stuff
       opt = Marshal.load(Marshal.dump(options))
-      opt = add_to_options(opt, preferences_to_conditions(preferences))
+      if preferences && preferences != {}
+        opt = add_to_options(opt, preferences_to_conditions(preferences))
+      end
       return find(:all, opt)
     end
-
     #Converts preferences into ActiveRecord conditions
     #
     #preferences can be any of the following:
