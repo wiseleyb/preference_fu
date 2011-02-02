@@ -2,7 +2,7 @@ begin
   require File.dirname(__FILE__) + '/../../../../config/environment'
 rescue LoadError
   require 'rubygems'
-  require 'activerecord'
+  require_gem 'activerecord'
 end
 
 require 'preference_fu'
@@ -15,10 +15,12 @@ def setup_db
     create_table :people do |t|
       t.string      :name
       t.integer     :preferences
+      t.integer     :reminders
     end
-    create_table :wombats do |t|
+    
+    create_table :tasks do |t|
       t.string      :name
-      t.integer     :preferences
+      t.integer     :reminders
     end
   end
 end
