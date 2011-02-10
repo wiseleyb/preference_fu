@@ -8,9 +8,8 @@ end
 require 'preference_fu'
 require "#{File.dirname(__FILE__)}/../init"
 
-ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
-
 def setup_db
+  @db = ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
   ActiveRecord::Schema.define(:version => 1) do
     create_table :people do |t|
       t.string      :name
@@ -26,7 +25,9 @@ def setup_db
 end
 
 def teardown_db
-  ActiveRecord::Base.connection.tables.each do |table|
-    ActiveRecord::Base.connection.drop_table(table)
+  sleep(1)
+  @db.tables.each do |table|
+    @db.drop_table(table)
   end
+  @db.disconnect!
 end
