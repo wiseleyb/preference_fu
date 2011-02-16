@@ -67,6 +67,10 @@ module PreferenceFu
           #{preference_accessor}.store(value)
         end
 
+        def preference_fu_class_methods_#{preference_accessor}=(value)
+          #{preference_accessor}.store(value)
+        end
+
         def #{preference_accessor}=(hsh)
           #{preference_accessor}.store(hsh)
         end
@@ -122,6 +126,14 @@ module PreferenceFu
         @options.each do |idx, hsh|
           self[hsh[:key]] = true
         end
+      end
+      
+      def to_h
+        h = {}
+        @options.each do |idx, hsh|
+          h[hsh[:key]] = self[hsh[:key]]
+        end
+        return h
       end
       
       # def method_missing(name,*args)
